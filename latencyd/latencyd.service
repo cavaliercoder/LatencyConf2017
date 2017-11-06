@@ -1,0 +1,14 @@
+[Unit]
+Description=latencyd server
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+EnvironmentFile=-/etc/sysconfig/latencyd
+Restart=on-failure
+ExecStart=/usr/bin/latencyd -config=/etc/latencyd/config.json
+User=latencyd
+Group=latencyd
+
+[Install]
+WantedBy=multi-user.target

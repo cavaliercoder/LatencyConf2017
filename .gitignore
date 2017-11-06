@@ -1,0 +1,5 @@
+*.json
+*.pptx
+*.rpm
+*.tar.gz
+/latencyd/latencyd
