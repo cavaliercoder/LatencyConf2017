@@ -41,7 +41,6 @@ func main() {
 			fmt.Println("Caught signal:", s)
 			cancel()
 		}
-		s.Shutdown()
 	}()
 
 	// start server
@@ -54,6 +53,8 @@ func main() {
 	}
 }
 
+// die prints a message to stderr and exit the program with a non-zero exit
+// code.
 func die(format string, a ...interface{}) {
 	fmt.Fprintf(os.Stderr, "\x1b[31mERROR\x1b[0m "+format+"\n", a...)
 	os.Exit(1)

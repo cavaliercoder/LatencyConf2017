@@ -75,16 +75,11 @@ func NewServer(cfg *ServerConfig, ctx context.Context) (*Server, error) {
 	return srv, nil
 }
 
-func cancelled(ctx context.Context) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-		return nil
-	}
-}
-
 func (s *Server) Serve() error {
+	go func() {
+		<-s.ctx.Done()
+		s.Shutdown()
+	}()
 	s.logger.Printf("Server listening on %v", s.ListenAddr)
 	return s.srv.ListenAndServe()
 }
@@ -116,12 +111,6 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		w.Duration = time.Now().Sub(start)
 		s.logger.Printf("%v", w)
 	}()
-
-	// check for client cancelation
-	if err := cancelled(r.Context()); err != nil {
-		s.Error(w, 499, "%v", err)
-		return
-	}
 
 	// fetch data from backends
 	data := &ResponseData{
