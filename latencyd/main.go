@@ -18,15 +18,8 @@ func main() {
 	flag.Parse()
 	rand.Seed(time.Now().UnixNano())
 
-	// load config file
-	f, err := os.Open(*configFile)
-	if err != nil {
-		die("unable to open configuration file: %v", err)
-	}
-	defer f.Close()
-
 	// create server
-	cfg, err := LoadServerConfig(f)
+	cfg, err := OpenServerConfig(*configFile)
 	if err != nil {
 		die("unable to read configuration file: %v", err)
 	}

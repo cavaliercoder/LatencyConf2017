@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"math/rand"
 	"net/http"
@@ -31,9 +30,15 @@ type ServerConfig struct {
 	Backends   []BackendConfig `json:"backends"`
 }
 
-func LoadServerConfig(r io.Reader) (*ServerConfig, error) {
+func OpenServerConfig(path string) (*ServerConfig, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
 	cfg := &ServerConfig{}
-	dec := json.NewDecoder(r)
+	dec := json.NewDecoder(f)
 	if err := dec.Decode(cfg); err != nil {
 		return nil, err
 	}
