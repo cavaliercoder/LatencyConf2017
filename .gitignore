@@ -1,5 +1,9 @@
+.terraform/
+*.backup
 *.json
 *.pptx
+*.pyc
 *.rpm
 *.tar.gz
+*.tfstate
 /latencyd/latencyd
