@@ -1,0 +1,40 @@
+digraph G {
+  # NODE 1
+  node1 [label="Router" latency=10]
+  node1 -> node2 [timeout=1000]
+
+  # NODE 2
+  node2 [label="IPS" latency=10]
+  node2 -> node3 [timeout=1000]
+
+  # NODE 3
+  node3 [label="Load Balancer" latency=10]
+  node3 -> node4 [timeout=1000]
+
+  # NODE 4
+  node4 [label="Web Server" latency=10]
+  node4 -> node5 [timeout=1000]
+  node4 -> node7 [timeout=1000]
+  node4 -> node10 [timeout=1000]
+
+  # NODE 5
+  node5 [label="Auth API" latency=50]
+  node5 -> node6 [timeout=1000]
+
+  # NODE 6
+  node6 [label="Auth DB" latency=50]
+
+  # NODE 7
+  node7 [label="Content API" latency=50]
+  node7 -> node8 [timeout=1000]
+  node7 -> node9 [timeout=1000]
+
+  # NODE 8
+  node8 [label="Content DB" latency=50]
+
+  # NODE 9
+  node9 [label="Content Cache" latency=10]
+
+  # NODE 10
+  node10 [label="Blob store" latency=20]
+}

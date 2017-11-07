@@ -23,6 +23,7 @@ func (b BackendConfig) String() string {
 }
 
 type ServerConfig struct {
+	NodeName   string          `json:"nodeName"`
 	LogFile    string          `json:"logFile"`
 	ListenAddr string          `json:"listenAddr"`
 	Latency    int             `json:"latency"`
@@ -65,7 +66,7 @@ func NewServer(cfg *ServerConfig, ctx context.Context) (*Server, error) {
 	srv := &Server{
 		ServerConfig: cfg,
 		ctx:          ctx,
-		logger:       log.New(w, "", log.LstdFlags),
+		logger:       log.New(w, fmt.Sprintf("[%s] ", cfg.NodeName), log.LstdFlags),
 	}
 	srv.srv = &http.Server{
 		Addr:     cfg.ListenAddr,
@@ -114,6 +115,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	// fetch data from backends
 	data := &ResponseData{
+		NodeName:  s.NodeName,
 		RequestID: reqID,
 		Backends:  map[string]*ResponseData{},
 	}

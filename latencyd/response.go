@@ -35,6 +35,7 @@ var responseTemplate = func() *template.Template {
 }()
 
 type ResponseData struct {
+	NodeName  string                   `json:"nodeName"`
 	RequestID string                   `json:"requestId"`
 	Error     string                   `json:"error,omitempty"`
 	Delay     int                      `json:"delay"`

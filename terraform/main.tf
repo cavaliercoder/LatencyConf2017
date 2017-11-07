@@ -58,22 +58,15 @@ resource "aws_security_group" "demo" {
 }
 
 resource "aws_instance" "demo" {
-  count           = 5
+  count           = 10
   ami             = "${data.aws_ami.centos.id}"
   instance_type   = "t2.micro"
   key_name        = "${aws_key_pair.demo.key_name}"
   security_groups = ["${aws_security_group.demo.name}"]
 
-  user_data = <<EOF
-#!/bin/sh
-yum install -y http://cdn.cavaliercoder.com/LatencyConf2017/latencyd-1.0.0-1.el7.x86_64.rpm
-systemctl enable latencyd
-systemctl start latencyd
-EOF
-
   tags {
-    Environment = "demo"
-    Name        = "LatencyConf2017-${count.index+1}"
+    Environment = "latency-demo"
+    Name        = "node${count.index+1}"
   }
 }
 
@@ -81,11 +74,16 @@ output "README" {
   value = <<EOF
 EC2 Instances:
 
-       Demo01:  ${element(aws_instance.demo.*.id, 0)} (${element(aws_instance.demo.*.public_ip, 0)})
-       Demo02:  ${element(aws_instance.demo.*.id, 1)} (${element(aws_instance.demo.*.public_ip, 1)})
-       Demo03:  ${element(aws_instance.demo.*.id, 2)} (${element(aws_instance.demo.*.public_ip, 2)})
-       Demo04:  ${element(aws_instance.demo.*.id, 3)} (${element(aws_instance.demo.*.public_ip, 3)})
-       Demo05:  ${element(aws_instance.demo.*.id, 4)} (${element(aws_instance.demo.*.public_ip, 4)})
+       node1:   ${element(aws_instance.demo.*.id, 0)} (${element(aws_instance.demo.*.public_ip, 0)})
+       node2:   ${element(aws_instance.demo.*.id, 1)} (${element(aws_instance.demo.*.public_ip, 1)})
+       node3:   ${element(aws_instance.demo.*.id, 2)} (${element(aws_instance.demo.*.public_ip, 2)})
+       node4:   ${element(aws_instance.demo.*.id, 3)} (${element(aws_instance.demo.*.public_ip, 3)})
+       node5:   ${element(aws_instance.demo.*.id, 4)} (${element(aws_instance.demo.*.public_ip, 4)})
+       node6:   ${element(aws_instance.demo.*.id, 5)} (${element(aws_instance.demo.*.public_ip, 5)})
+       node7:   ${element(aws_instance.demo.*.id, 6)} (${element(aws_instance.demo.*.public_ip, 6)})
+       node8:   ${element(aws_instance.demo.*.id, 7)} (${element(aws_instance.demo.*.public_ip, 7)})
+       node9:   ${element(aws_instance.demo.*.id, 8)} (${element(aws_instance.demo.*.public_ip, 8)})
+       node10:  ${element(aws_instance.demo.*.id, 9)} (${element(aws_instance.demo.*.public_ip, 9)})
 
 EOF
 }

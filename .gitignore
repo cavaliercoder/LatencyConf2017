@@ -7,3 +7,5 @@
 *.tar.gz
 *.tfstate
 /latencyd/latencyd
+*.png
+*.svg
