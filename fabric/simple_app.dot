@@ -1,0 +1,8 @@
+digraph G {
+  # NODE 1
+  node1 [label="Web Server" latency=30]
+  node1 -> node2 [timeout=500]
+
+  # NODE 2
+  node2 [label="Database" latency=100]
+}

@@ -35,11 +35,11 @@ var responseTemplate = func() *template.Template {
 }()
 
 type ResponseData struct {
-	NodeName  string                   `json:"nodeName"`
-	RequestID string                   `json:"requestId"`
-	Error     string                   `json:"error,omitempty"`
-	Delay     int                      `json:"delay"`
-	Backends  map[string]*ResponseData `json:"backends"`
+	NodeName  string          `json:"nodeName"`
+	RequestID string          `json:"requestId"`
+	Error     string          `json:"error,omitempty"`
+	Delay     int             `json:"delay"`
+	Backends  []*ResponseData `json:"backends,omitempty"`
 }
 
 type ResponseWriter struct {

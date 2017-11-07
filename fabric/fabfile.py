@@ -23,39 +23,46 @@ def get_tag(instance, key, default=None):
             return tag['Value']
     return default
 
-def build_latencyd_configs():
-    g = graph_from_dot_file('webapp.dot')[0]
+def build_latencyd_configs(graph):
+    """
+    Build latencyd configurations using the given graphviz dot file.
+    Resultant configurations are stored in env.configs keyed by IP address.
+    """
+
+    g = graph_from_dot_file(graph+'.dot')[0]
     env.configs = {}
-    for host in env.mappings: # BUG: includes IP addresses
-        name = env.mappings[host] # e.g. "node1"
-        nodes = g.get_node(name)
-        if not nodes:
-            continue
-        n = nodes[0]
+    for host in env.mappings: # BUG: env.mappings also contains reverse mappings
+        name = env.mappings[host] # e.g. name = "node1"
         config = {
-            'nodeName': n.get('label').strip('"') or 'Unknown',
+            'nodeName': name,
             'listenAddr': ':3000',
-            'latency': int(n.get('latency')),
+            'latency': 0,
             'variance': 0.3,
             'logFile': '/var/log/latencyd/latencyd.log',
             'backends': [],
         }
-        for e in g.get_edges():
-            if e.get_source() != name:
-                continue
-            dst = e.get_destination()
-            dnodes = g.get_node(dst)
-            if not dnodes:
-                continue
-            config['backends'].append({
-                'name': dnodes[0].get('label').strip('"') or dst,
-                'url': 'http://%s:3000/' % env.mappings.get(dst),
-                'timeout': int(e.get('timeout')),
-            })
+        nodes = g.get_node(name)
+        if nodes:
+            n = nodes[0]
+            config['nodeName'] = n.get('label').strip('"') or host
+            config['latency'] = int(n.get('latency') or '0')
+            for e in g.get_edges():
+                if e.get_source() != name:
+                    continue
+                dst = e.get_destination()
+                dnodes = g.get_node(dst)
+                if not dnodes:
+                    continue
+                config['backends'].append({
+                    'name': dnodes[0].get('label').strip('"') or dst,
+                    'url': 'http://%s:3000/' % env.mappings.get(dst), # BUG: unhandled error case
+                    'timeout': int(e.get('timeout') or '0'),
+                    'roundtrips': int(e.get('roundtrips') or '1'),
+                })
         env.configs[host] = config
 
 @task
-def get_instances(environment, user='centos'):
+def get_instances(environment, user='centos', graph=None):
     """
     Searches EC2 for Instances matching the given 'Environment' tags values.
     Discovered Instances are added to env.hosts for use in subsequent tasks.
@@ -76,7 +83,8 @@ def get_instances(environment, user='centos'):
             env.mappings[instance['PublicIpAddress']] = name
             env.mappings[name] = instance['PublicIpAddress']
             count += 1
-    build_latencyd_configs()
+    if graph:
+        build_latencyd_configs(graph)
     if count == 0:
         print(red('No EC2 Instances found where Environment=%s' % environment))
         return
@@ -94,29 +102,47 @@ def configure_latencyd():
     from json import dumps
     from StringIO import StringIO
 
+    if 'configs' not in env:
+        abort('no latencyd configurations found')
     if env.host not in env.configs:
-        abort('no configuration found for instance: %s' % env.host)
+        abort('no latencyd configuration found for instance: %s' % env.host)
     config = StringIO(dumps(env.configs[env.host], indent=2))
     put(config, '/etc/latencyd/config.json', use_sudo=True)
     sudo('/bin/systemctl restart latencyd')
 
 @parallel
 def uninstall_latencyd():
+    """
+    Uninstall latencyd from the target host.
+    """
+
     sudo('/usr/bin/yum -y -q -e 0 remove latencyd')
 
 
 @task
 def setup():
+    """
+    Install and enable latencyd.
+    """
+
     execute(get_instances, ENVIRONMENT)
     execute(install_latencyd)
-    execute(configure_latencyd)
 
 @task
-def deploy():
-    execute(get_instances, ENVIRONMENT)
+def deploy(graph):
+    """
+    Build latencyd configurations from the given dot graph file and deploy the configurations to
+    EC2 Instances.
+    """
+
+    execute(get_instances, ENVIRONMENT, graph=graph)
     execute(configure_latencyd)
 
 @task
 def destroy():
+    """
+    Uninstall latencyd from all target EC2 instances.
+    """
+
     execute(get_instances, ENVIRONMENT)
     execute(uninstall_latencyd)

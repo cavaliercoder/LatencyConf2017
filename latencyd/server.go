@@ -13,9 +13,10 @@ import (
 )
 
 type BackendConfig struct {
-	Name    string `json:"name"`
-	URL     string `json:"url"`
-	Timeout int    `json:"timeout"`
+	Name       string `json:"name"`
+	URL        string `json:"url"`
+	Timeout    int    `json:"timeout"`
+	RoundTrips int    `json:"roundtrips"`
 }
 
 func (b BackendConfig) String() string {
@@ -117,15 +118,22 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	data := &ResponseData{
 		NodeName:  s.NodeName,
 		RequestID: reqID,
-		Backends:  map[string]*ResponseData{},
+		Backends:  []*ResponseData{},
 	}
 	for _, backend := range s.Backends {
-		bdata, err := s.GetBackendResponse(backend, reqID)
-		if err != nil {
-			s.Error(w, http.StatusServiceUnavailable, "error in backend '%s': %v", backend, err)
-			return
+		trips := backend.RoundTrips
+		if trips < 1 {
+			trips = 1
 		}
-		data.Backends[backend.Name] = bdata
+		for i := 0; i < trips; i++ {
+			// BUG: each roundtrip uses the same request id
+			bdata, err := s.GetBackendResponse(backend, reqID)
+			if err != nil {
+				s.Error(w, http.StatusServiceUnavailable, "error in backend '%s': %v", backend, err)
+				return
+			}
+			data.Backends = append(data.Backends, bdata)
+		}
 	}
 
 	// sleep
