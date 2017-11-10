@@ -38,7 +38,8 @@ type ResponseData struct {
 	NodeName  string          `json:"nodeName"`
 	RequestID string          `json:"requestId"`
 	Error     string          `json:"error,omitempty"`
-	Delay     int             `json:"delay"`
+	Latency   int             `json:"latency"`
+	WorkDone  string          `json:"workDone"`
 	Backends  []*ResponseData `json:"backends,omitempty"`
 }
 
