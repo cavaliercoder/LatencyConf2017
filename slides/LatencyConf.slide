@@ -1,0 +1,176 @@
+Configuring Timeouts
+Latency Conference
+16 Nov 2017
+Tags: latency, timeouts, cloud
+
+Ryan Armstrong
+Production Engineering Manager, Seven West Media
+ryan@cavaliercoder.com
+http://cavaliercoder.com/
+@cavaliercoder
+
+: Seven West Media
+: Production Engineering
+: My role
+
+* Agenda
+
+- Why timeouts matter
+- Anatomy of a timeout
+- Failure scenarios
+- One simple rule
+- Trade-offs
+
+
+* Backstory
+
+.image blog.png _ 900
+# .iframe http://cavaliercoder.com/blog/webops-postmortem.html 900 600
+
+
+* Backstory
+
+.link https://paulhammant.com/ Paul Hammant
+
+: Paul described three similar issues
+: Recommended I write about timeouts
+
+
+* The goal
+
+- Encourage systems thinking
+- Sweat the details
+
+: critial thinking about flow through distributed and simple systems
+: I'll demonstrate some problems, solutions and tradeoffs
+
+
+* Flow of requests through a system
+
+.image system.svg
+
+: Applies to distributed systems, micro-services and container pods
+
+* N-Tier
+
+.image n-tier.svg
+
+
+* Monoliths?
+
+.image monolith-1.svg
+
+
+* Monoliths?
+
+Yes!!!
+
+.image monolith-2.svg
+
+
+* Hidden timeouts
+
+- TCP handshake
+- TODO
+
+
+* Anatomy of a timeout
+
+*Client*: How long do I wait for the server?
+
+*Server*: How long will I wait for the client's request?
+
+
+* Anatomy of a timeout
+
+A HTTPS request
+
+- Name resolution
+- TCP handshake
+- TLS handshake
+- Transfer request headers
+- Transfer request body
+- Time-to-first-byte
+- Transfer response headers
+- Transfer response body
+
+
+* Anti-pattern: Default timeouts
+
+- Typically generous
+- Optimized for local error reduction
+
+.image ../fabric/default_timeouts.png
+
+* Benchmark
+
+: $ fab deploy:default_timeouts
+: $ clear && ab -t5 -c1 http://localhost:3000/
+
+: Interesting:
+: - Requests per second (throughput)
+: - Time per request (50th percentile)
+: - Non-2xx responses (error rate)
+
+: # slow responses, moderate error rate:
+: $ clear && ab -t5 -c100 http://localhost:3000/
+
+.code ../fabric/ab.sample
+
+
+* Anti-pattern: Agressive timeouts
+
+- All components optimized for local latency
+
+: Demonstrate healthy request failure
+:
+: $ fab deploy:agressive_timeouts
+: $ clear && ab -t5 -c1 http://localhost:3000/
+:
+: # fast responses, high error rate
+: $ clear && ab -t5 -c100 http://localhost:3000/
+:
+: Try increase timeouts a little
+
+
+* Anti-pattern: Equal timeouts
+
+- All components have similar timeouts
+
+: Demonstrate healthy request failure
+: Demonstrate DOS
+
+
+* One simple rule
+
+    timeout(n) > T(n+1)
+
+: T = maximum healthy time
+
+
+
+
+* Load characterisation
+
+What is the maximum time a healthy request should take?
+
+: Variance - E.g Static vs Dynamic | large vs small files
+: Round trips - Synchronous or concurrent?
+: Concurrency - Node.js event loop | Go goroutines
+: Parallelism
+: CPU vs. IO bound-latency - Rendering vs. Data retrieval
+: Keep-alives vs. Session negotiation
+: Retries and backoff
+: Cache tiers and warm up
+: Cancellation
+: Rate limiting and throttling
+: QoS
+: Queues and decoupled workflows
+: Upstream dependencies
+
+
+* There are no simple rules
+
+There are always tradeoffs.
+
+* Everything must be bounded

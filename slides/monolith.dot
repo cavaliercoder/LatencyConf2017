@@ -1,0 +1,10 @@
+digraph G {
+  node1 [label="App server" load=100] # ~ 34/s
+
+  node2 [label="API server" load=50] # ~ 70/s
+
+  node3 [label="Database" load=5000]
+
+  node1 -> node2
+  node2 -> node3 [timeout=1000]
+}

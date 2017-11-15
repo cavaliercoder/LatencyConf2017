@@ -5,15 +5,15 @@ digraph G {
 
   # Load Balancer
   node2 [label="Load Balancer" load=3] # ~ 1000/s
-  node2 -> node3 [timeout=5000]
+  node2 -> node3 [timeout=100]
 
   # Reverse Proxy
   node3 [label="Reverse Proxy" load=3] # ~ 1000/s
-  node3 -> node4 [timeout=5000]
+  node3 -> node4 [timeout=60]
 
   # App server
   node4 [label="App Server" load=100] # ~ 34/s
-  node4 -> node5 [timeout=5000]
+  node4 -> node5 [timeout=50]
 
   # Database
   node5 [label="Database" load=50] # ~ 70/s

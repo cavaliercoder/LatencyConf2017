@@ -35,12 +35,19 @@ var responseTemplate = func() *template.Template {
 }()
 
 type ResponseData struct {
-	NodeName  string          `json:"nodeName"`
-	RequestID string          `json:"requestId"`
-	Error     string          `json:"error,omitempty"`
-	Latency   int             `json:"latency"`
-	WorkDone  string          `json:"workDone"`
-	Backends  []*ResponseData `json:"backends,omitempty"`
+	NodeName  string                 `json:"nodeName"`
+	RequestID string                 `json:"requestId"`
+	Error     string                 `json:"error,omitempty"`
+	Load      int                    `json:"load"`
+	WorkDone  string                 `json:"workDone"`
+	Backends  []*BackendResponseData `json:"backends,omitempty"`
+}
+
+type BackendResponseData struct {
+	StatusCode   int            `json:"statusCode"`
+	Latency      float64        `json:"latency"`
+	Backend      *BackendConfig `json:"backend"`
+	ResponseData *ResponseData  `json:"responseBody"`
 }
 
 type ResponseWriter struct {

@@ -29,14 +29,14 @@ def build_latencyd_configs(graph):
     Resultant configurations are stored in env.configs keyed by IP address.
     """
 
-    g = graph_from_dot_file(graph+'.dot')[0]
+    g = graph_from_dot_file('../slides/%s.dot' % graph)[0]
     env.configs = {}
     for host in env.mappings: # BUG: env.mappings also contains reverse mappings
         name = env.mappings[host] # e.g. name = "node1"
         config = {
             'nodeName': name,
             'listenAddr': ':3000',
-            'latency': 0,
+            'load': 0,
             'variance': 0.3,
             'logFile': '/var/log/latencyd/latencyd.log',
             'backends': [],
@@ -45,7 +45,7 @@ def build_latencyd_configs(graph):
         if nodes:
             n = nodes[0]
             config['nodeName'] = n.get('label').strip('"') or host
-            config['latency'] = int(n.get('latency') or '0')
+            config['load'] = int(n.get('load') or '1')
             for e in g.get_edges():
                 if e.get_source() != name:
                     continue
@@ -92,6 +92,11 @@ def get_instances(environment, user='centos', graph=None):
 
 @parallel
 def install_latencyd():
+    # install ab, jq
+    sudo('/usr/bin/yum -y -q -e 0 install epel-release')
+    sudo('/usr/bin/yum -y -q -e 0 install httpd-tools jq')
+
+    # install latencyd from rpm url
     res = run('/usr/bin/rpm -q latencyd', warn_only=True, quiet=True)
     if res.return_code != 0:
         sudo('/usr/bin/yum -y -q -e 0 install %s' % LATENCY_RPM_URL)
@@ -109,6 +114,49 @@ def configure_latencyd():
     config = StringIO(dumps(env.configs[env.host], indent=2))
     put(config, '/etc/latencyd/config.json', use_sudo=True)
     sudo('/bin/systemctl restart latencyd')
+    print(green('Configured %s (%s) as %s' % (
+        env.mappings[env.host],
+        env.host,
+        env.configs[env.host]['nodeName'])))
+
+@task
+def bench(concurrency=1, duration=5):
+    keepers = (
+        'Complete requests:',
+        'Non-2xx responses:',
+        'Requests per second:',
+        'Time per request:',
+        'Percentage of the requests',
+        '  50%',
+        ' 100%',
+    )
+    cmd = '/usr/bin/ab -t%s -c%s http://localhost:3000/' % (duration, concurrency)
+    res = run(cmd, quiet=True)
+
+    # write raw output
+    f = open('./ab.out', 'w')
+    f.write(res)
+    f.close()
+
+    # write sampled output
+    lines = res.splitlines()
+    lines = lines[15:] # drop headers
+    f = open('./ab.sample', 'w')
+    f.write('$ %s\n\n' % cmd)
+    skipped = 0
+    for line in lines:
+        keep = False
+        for keeper in keepers: # O(n2) yikes
+            if line.startswith(keeper):
+                keep = True
+        if keep:
+            skipped = 0
+            f.write(line + '\n')
+        else:
+            skipped += 1
+        if skipped == 1:
+            f.write('...\n')
+    f.close()
 
 @parallel
 def uninstall_latencyd():

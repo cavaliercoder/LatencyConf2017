@@ -57,16 +57,70 @@ resource "aws_security_group" "demo" {
   }
 }
 
+resource "aws_iam_role" "demo" {
+  name_prefix = "LatencyConf2017Demo"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "sts:AssumeRole",
+      "Principal": { "Service": "ec2.amazonaws.com" },
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_instance_profile" "demo" {
+  name_prefix = "LatencyConf2017Demo"
+  role        = "${aws_iam_role.demo.name}"
+}
+
+resource "aws_iam_policy" "demo" {
+  name_prefix = "CloudWatchLogsWriteAccess"
+  description = "Provides read only access to CloudWatch Logs"
+  path        = "/"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogStreams"
+    ],
+    "Resource": [ "arn:aws:logs:*:*:*" ]
+  }
+ ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "demo" {
+  role       = "${aws_iam_role.demo.name}"
+  policy_arn = "${aws_iam_policy.demo.id}"
+}
+
 resource "aws_instance" "demo" {
-  count           = 10
-  ami             = "${data.aws_ami.centos.id}"
-  instance_type   = "t2.micro"
-  key_name        = "${aws_key_pair.demo.key_name}"
-  security_groups = ["${aws_security_group.demo.name}"]
+  count                = 10
+  ami                  = "${data.aws_ami.centos.id}"
+  instance_type        = "t2.micro"
+  key_name             = "${aws_key_pair.demo.key_name}"
+  security_groups      = ["${aws_security_group.demo.name}"]
+  iam_instance_profile = "${aws_iam_instance_profile.demo.name}"
 
   tags {
-    Environment = "latency-demo"
     Name        = "node${count.index+1}"
+    Description = "latencyconf.io"
+    Environment = "latency-demo"
   }
 }
 

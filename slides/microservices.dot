@@ -1,0 +1,52 @@
+digraph G {
+  proxy [label="Reverse Proxy"]
+  proxy -> web
+
+  subgraph {
+    rank=same
+    web [label="Web server"]
+    webcache [label="Render cache"]
+  }
+
+  subgraph {
+    identity [label="Identity service"]
+    identitydb [label="Identity store"]
+
+    identity -> identitydb
+  }
+
+  subgraph {
+    { rank=same content contentcache }
+
+    content [label="Content service"]
+    contentcache [label="Content cache"]
+    contentdb [label="Content store"]
+
+    content -> contentdb
+    content -> contentcache [dir=both]
+  }
+
+  subgraph {
+    prefs [label="Preferences service"]
+    prefsdb [label="Preferences store"]
+
+    prefs -> prefsdb
+  }
+
+  subgraph {
+    taxonomy [label="Taxonomy service"]
+    taxonomydb [label="Taxonomy store"]
+
+    taxonomy -> taxonomydb
+  }
+
+  web -> webcache [dir=both]
+  web -> identity
+  web -> prefs
+  web -> content
+
+  content -> taxonomy
+  content -> prefs
+
+  prefs -> identity
+}

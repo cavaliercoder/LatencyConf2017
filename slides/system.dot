@@ -1,0 +1,49 @@
+digraph G {
+  subgraph {
+    rank=same
+    A
+    B
+  }
+
+  subgraph {
+    C
+    D
+
+    C -> D
+  }
+
+  subgraph {
+    { rank=same E F }
+
+    E
+    F
+    G
+
+    E -> G
+    E -> F [dir=both minlen=4.0]
+  }
+
+  subgraph {
+    H
+    I
+
+    H -> I
+  }
+
+  subgraph {
+    J
+    K
+
+    J -> K
+  }
+
+  A -> B [dir=both minlen=4.0]
+  A -> C
+  A -> H
+  A -> E
+
+  E -> J
+  E -> H
+
+  H -> C
+}

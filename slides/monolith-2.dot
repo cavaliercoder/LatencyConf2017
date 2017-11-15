@@ -1,0 +1,18 @@
+digraph G {
+  rankdir="LR"
+
+  cdn [label="CDN"]
+  firewall [label="Firewall"]
+  ips [label="IPS"]
+  router [label="Router"]
+  waf [label="WAF"]
+  alb [label="VIP"]
+  app [label="App server"]
+
+  cdn -> firewall
+  firewall -> ips
+  ips -> router
+  router -> waf
+  waf -> alb
+  alb -> app
+}

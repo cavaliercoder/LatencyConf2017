@@ -16,7 +16,7 @@ $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz: $(PACKAGE_NAME)
 	rm -rvf $(PACKAGE_NAME)-$(PACKAGE_VERSION)
 
 clean:
-	rm -vf $(PACKAGE_NAME)
+	rm -vf $(PACKAGE_NAME) $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz
 
 rpm: $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz
 	mkdir -v -p $(RPMDIR)/{SPECS,SOURCES}

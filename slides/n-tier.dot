@@ -1,0 +1,29 @@
+digraph G {
+  rankdir="LR"
+
+  subgraph presentation {
+		style=filled;
+		color=lightgrey;
+    label = "Presentation";
+
+    web [label="Web server"]
+	}
+
+  subgraph logic {
+    style=filled;
+    color=lightgrey;
+    label="Business logic";
+
+    api [label="API server"]
+  }
+
+  subgraph data {
+    style=filled;
+    color=lightgrey;
+    label="Data";
+
+    db [label="Database"]
+  }
+
+  web -> api -> db
+}
