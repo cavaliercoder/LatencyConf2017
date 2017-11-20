@@ -9,10 +9,6 @@ ryan@cavaliercoder.com
 http://cavaliercoder.com/
 @cavaliercoder
 
-: Seven West Media
-: Production Engineering
-: My role
-: We are hiring
 
 * Agenda
 
@@ -26,20 +22,14 @@ http://cavaliercoder.com/
 * Backstory
 
 .image blog.png _ 900
-# .iframe http://cavaliercoder.com/blog/webops-postmortem.html 900 600
 
 
 * Backstory
 
-Paul Hammant
+.link https://paulhammant.com/ Paul Hammant
 DevOps and Continuous Delivery expert
 
-.link https://paulhammant.com/ paulhammant.com
-
 "So, a great article. You could do well to do a canonical blog entry on timeouts I think, complete with sequence diagrams. Perhaps with a simulation :)"
-
-: Pauldescribed three similar issues
-: Recommended I write about timeouts
 
 
 * The goal
@@ -47,22 +37,25 @@ DevOps and Continuous Delivery expert
 - Encourage systems thinking
 - Sweat the details
 
-: critial thinking about flow and interactions in a system
-: I'll demonstrate some problems, solutions and tradeoffs
-
 
 * Flow of requests through a system
 
+Timeouts are important in container pods, micro-services, large scale
+distributed systems, etc.
+
 .image system.svg
 
-: Applies to distributed systems, micro-services and container pods
 
 * N-Tier
+
+Also important in smaller architectures
 
 .image n-tier.svg
 
 
 * Monoliths?
+
+Are timeouts important for monolithic applications?
 
 .image monolith-1.svg
 
@@ -73,9 +66,12 @@ Yes!!!
 
 .image monolith-2.svg
 
-: hidden network components
-: hidden software components (DB on same server)?
-: TCP stack?
+What are you not considering?
+
+- routers, firewalls, load balancers, etc.
+- TCP, DNS, etc.
+- browsers, proxies, etc.
+- collocated services like databases, storage, etc.
 
 
 * Anatomy of a timeout
@@ -107,93 +103,102 @@ A HTTPS request
 .image default_timeouts.svg
 
 
-* Benchmark
+* Anti-pattern: Default timeouts
 
-: $ fab deploy:default_timeouts
-: $ fab -H centos@13.55.60.112 bench:concurrency=1
-
-: 1 - simple load
-: 2 - high load
-: 3 - faulty db + singleton error
-
-.code ../fabric/ab.sample
+- Errors manifest wherever the slowest timeout is configured - not where the issue occurred
+- Ripe for Denial-of-Service
+- _All_ user requests may be affected by high load
 
 
-* Anti-pattern: Agressive timeouts
+* Anti-pattern: Aggressive timeouts
 
 - All components optimized for local latency
 
 .image agressive_timeouts.svg
 
 
-* Benchmark
+* Anti-pattern: Aggressive timeouts
 
-.code ../fabric/ab.sample
-
-: 1 - gradually increase concurrency
-: 2 - total failure
-: 3 - response body under load
-: 4 - faulty db under low load - error misplaced
-
-: $ fab deploy:agressive_timeouts
+- Errors manifest in unpredictable places
+- Minor load can cause healthy requests to timeout
+- No consideration for upstream dependencies
 
 
 * Anti-pattern: Equal timeouts
 
-- All components have similar, reasonable timeouts
+- All components have similar timeouts
+- Timeout allows enough time for healthy requests under load
 
 .image equal_timeouts.svg
 
-: $ fab deploy:equal_timeouts
 
-* Benchmark
+* Anti-pattern: Equal timeouts
 
-.code ../fabric/ab.sample
-
-: 1 - healthy request
-: 2 - faulty db -> show error on each component
-
+- Errors manifest in unpredictable places
+- Backends are given too much time to service unhealthy requests
+- Ripe for Denial-of-Service
 
 
 * One simple rule
 
     timeout(n) > T(n+1)
 
-: T = maximum healthy time
-: $ fab deploy:fixed
+The timeout of any given component must be greater than the maximum time for the
+next component to service a healthy request.
 
 .image fixed.svg
 
-* Benchmark
 
-.code ../fabric/ab.sample
+* One simple rule
 
-: 1 - simple load
-: 2 - high load
-: 3 - faulty db -> show error on each component
+- Timeout errors manifest at the edge where they occur
+- Unhealthy requests are cancelled - reserving capacity for healthy requests
 
 
 * Load characterisation
 
 What is the maximum time a healthy request should take?
 
-: Variance - E.g Static vs Dynamic | large vs small files
-: Round trips - Synchronous or concurrent?
-: Concurrency - Node.js event loop | Go goroutines
-: Parallelism
-: CPU vs. IO bound-latency - Rendering vs. Data retrieval
-: Keep-alives vs. Session negotiation
-: Retries and backoff
-: Cache tiers and warm up
-: Cancellation
-: Rate limiting and throttling
-: QoS
-: Queues and decoupled workflows
-: Upstream dependencies
+Consider
+
+- Variance - E.g. Static vs. Dynamic content or large vs. small files
+- Multiple round trips - E.g. multiple database queries per page
+- Asynchronous vs. synchronous requests
+- Concurrency - E.g. The Node.js event loop or Go-routines
+- Multi-processor parallelism
+- CPU vs. IO bound-latency - E.g. DOM rendering vs. data retrieval
+- Keep-alives vs. Session negotiation
+
+but wait, theres more...
+
+
+* Load characterisation
+
+- Retries and backoffs for failed requests
+- Caching tiers and warm up delays
+- Cancellation and its propagation
+- Rate limiting and throttling
+- Quality-of-Service (Qos) and prioritisation
+- Queues and decoupled workflows
+- Upstream dependencies
+
+Maybe this is too hard?
 
 
 * There are no simple rules
 
 There are always tradeoffs.
 
+Consider whether you need to optimise for:
+
+- throughput?
+- or guaranteed delivery?
+
+
 * Everything must be bounded
+
+Predictable errors are better than unpredictable errors.
+
+Don't be discouraged. Be curious!
+
+.image system.svg
