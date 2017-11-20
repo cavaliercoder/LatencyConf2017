@@ -12,12 +12,13 @@ http://cavaliercoder.com/
 : Seven West Media
 : Production Engineering
 : My role
+: We are hiring
 
 * Agenda
 
-- Why timeouts matter
+- Backstory
 - Anatomy of a timeout
-- Failure scenarios
+- Scenarios
 - One simple rule
 - Trade-offs
 
@@ -30,9 +31,14 @@ http://cavaliercoder.com/
 
 * Backstory
 
-.link https://paulhammant.com/ Paul Hammant
+Paul Hammant
+DevOps and Continuous Delivery expert
 
-: Paul described three similar issues
+.link https://paulhammant.com/ paulhammant.com
+
+"So, a great article. You could do well to do a canonical blog entry on timeouts I think, complete with sequence diagrams. Perhaps with a simulation :)"
+
+: Pauldescribed three similar issues
 : Recommended I write about timeouts
 
 
@@ -41,7 +47,7 @@ http://cavaliercoder.com/
 - Encourage systems thinking
 - Sweat the details
 
-: critial thinking about flow through distributed and simple systems
+: critial thinking about flow and interactions in a system
 : I'll demonstrate some problems, solutions and tradeoffs
 
 
@@ -67,11 +73,9 @@ Yes!!!
 
 .image monolith-2.svg
 
-
-* Hidden timeouts
-
-- TCP handshake
-- TODO
+: hidden network components
+: hidden software components (DB on same server)?
+: TCP stack?
 
 
 * Anatomy of a timeout
@@ -100,20 +104,17 @@ A HTTPS request
 - Typically generous
 - Optimized for local error reduction
 
-.image ../fabric/default_timeouts.png
+.image default_timeouts.svg
+
 
 * Benchmark
 
 : $ fab deploy:default_timeouts
-: $ clear && ab -t5 -c1 http://localhost:3000/
+: $ fab -H centos@13.55.60.112 bench:concurrency=1
 
-: Interesting:
-: - Requests per second (throughput)
-: - Time per request (50th percentile)
-: - Non-2xx responses (error rate)
-
-: # slow responses, moderate error rate:
-: $ clear && ab -t5 -c100 http://localhost:3000/
+: 1 - simple load
+: 2 - high load
+: 3 - faulty db + singleton error
 
 .code ../fabric/ab.sample
 
@@ -122,23 +123,36 @@ A HTTPS request
 
 - All components optimized for local latency
 
-: Demonstrate healthy request failure
-:
+.image agressive_timeouts.svg
+
+
+* Benchmark
+
+.code ../fabric/ab.sample
+
+: 1 - gradually increase concurrency
+: 2 - total failure
+: 3 - response body under load
+: 4 - faulty db under low load - error misplaced
+
 : $ fab deploy:agressive_timeouts
-: $ clear && ab -t5 -c1 http://localhost:3000/
-:
-: # fast responses, high error rate
-: $ clear && ab -t5 -c100 http://localhost:3000/
-:
-: Try increase timeouts a little
 
 
 * Anti-pattern: Equal timeouts
 
-- All components have similar timeouts
+- All components have similar, reasonable timeouts
 
-: Demonstrate healthy request failure
-: Demonstrate DOS
+.image equal_timeouts.svg
+
+: $ fab deploy:equal_timeouts
+
+* Benchmark
+
+.code ../fabric/ab.sample
+
+: 1 - healthy request
+: 2 - faulty db -> show error on each component
+
 
 
 * One simple rule
@@ -146,8 +160,17 @@ A HTTPS request
     timeout(n) > T(n+1)
 
 : T = maximum healthy time
+: $ fab deploy:fixed
 
+.image fixed.svg
 
+* Benchmark
+
+.code ../fabric/ab.sample
+
+: 1 - simple load
+: 2 - high load
+: 3 - faulty db -> show error on each component
 
 
 * Load characterisation

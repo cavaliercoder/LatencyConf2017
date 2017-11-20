@@ -2,6 +2,8 @@ from __future__ import with_statement
 
 import re
 
+from shutil import copyfile
+
 from fabric.api import *
 from fabric.colors import *
 
@@ -137,6 +139,10 @@ def bench(concurrency=1, duration=5):
     f = open('./ab.out', 'w')
     f.write(res)
     f.close()
+
+    if res.return_code != 0:
+        copyfile('./ab.out', './ab.sample')
+        return
 
     # write sampled output
     lines = res.splitlines()

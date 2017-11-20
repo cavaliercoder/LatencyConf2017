@@ -1,20 +1,16 @@
 digraph G {
-  # Web Browser
-  node1 [label="Browser"]
-  node1 -> node2
-
   # Load Balancer
-  node2 [label="Load Balancer" load=3] # ~ 1000/s
-  node2 -> node3 [timeout=100]
+  node1 [label="Load Balancer" load=3] # ~ 1000/s
+  node1 -> node2 [label="timeout=1s" timeout=1000]
 
   # Reverse Proxy
-  node3 [label="Reverse Proxy" load=3] # ~ 1000/s
-  node3 -> node4 [timeout=60]
+  node2 [label="Reverse Proxy" load=3] # ~ 1000/s
+  node2 -> node3 [label="timeout=1s" timeout=1000]
 
   # App server
-  node4 [label="App Server" load=100] # ~ 34/s
-  node4 -> node5 [timeout=50]
+  node3 [label="App Server" load=100] # ~ 34/s
+  node3 -> node4 [label="timeout=1s" timeout=1000]
 
   # Database
-  node5 [label="Database" load=50] # ~ 70/s
+  node4 [label="Database" load=5000] # ~ 70/s
 }
